@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>Q版头像动图生成器</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont;
+      text-align: center;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    canvas {
+      background: white;
+      border-radius: 12px;
+      margin: 20px 0;
+    }
+    button, select, input {
+      margin: 8px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: none;
+      background: #333;
+      color: white;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>✨ Q版头像动图生成器</h2>
+
+  <input type="file" id="upload" accept="image/*">
+
+  <br>
+
+  <select id="effect">
+    <option value="bounce">开心跳</option>
+    <option value="shake">抖动</option>
+    <option value="rotate">摇头</option>
+    <option value="breath">呼吸感</option>
+  </select>
+
+  <br>
+
+  <canvas id="canvas" width="300" height="300"></canvas>
+
+  <br>
+
+  <button id="export">导出GIF</button>
+
+  <script src="https://cdn.jsdelivr.net/npm/gif.js.optimized/dist/gif.js"></script>
+
+  <script>
+    const canvas = document.getElementById("canvas")
+    const ctx = canvas.getContext("2d")
+    const upload = document.getElementById("upload")
+    const effectSelect = document.getElementById("effect")
+
+    let img = null
+    let t = 0
+
+    upload.onchange = e => {
+      const file = e.target.files[0]
+      const reader = new FileReader()
+      reader.onload = () => {
+        img = new Image()
+        img.src = reader.result
+      }
+      reader.readAsDataURL(file)
+    }
+
+    function draw() {
+      requestAnimationFrame(draw)
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+      if (!img) return
+
+      const cx = canvas.width / 2
+      const cy = canvas.height / 2
+
+      const scaleBase = Math.min(
+        canvas.width / img.width,
+        canvas.height / img.height
+      ) * 0.8
+
+      let x = 0, y = 0, scale = 1, rotate = 0
+
+      const type = effectSelect.value
+
+      if (type === "bounce") {
+        y = Math.abs(Math.sin(t * 0.01)) * -20
+      }
+
+      if (type === "shake") {
+        x = Math.sin(t * 0.1) * 5
+        y = Math.cos(t * 0.1) * 5
+      }
+
+      if (type === "rotate") {
+        rotate = Math.sin(t * 0.01) * 10
+      }
+
+      if (type === "breath") {
+        scale = 1 + Math.sin(t * 0.005) * 0.05
+      }
+
+      ctx.save()
+      ctx.translate(cx + x, cy + y)
+      ctx.rotate(rotate * Math.PI / 180)
+      ctx.scale(scale * scaleBase, scale * scaleBase)
+
+      ctx.drawImage(img, -img.width / 2, -img.height / 2)
+
+      ctx.restore()
+
+      t++
+    }
+
+    draw()
+
+    document.getElementById("export").onclick = () => {
+      if (!img) return alert("先上传图片！")
+
+      const gif = new GIF({
+        workers: 2,
+        quality: 10
+      })
+
+      let frames = 60
+      let tempT = 0
+
+      function drawFrame() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+        const cx = canvas.width / 2
+        const cy = canvas.height / 2
+
+        const scaleBase = Math.min(
+          canvas.width / img.width,
+          canvas.height / img.height
+        ) * 0.8
+
+        let x = 0, y = 0, scale = 1, rotate = 0
+        const type = effectSelect.value
+
+        if (type === "bounce") {
+          y = Math.abs(Math.sin(tempT * 0.01)) * -20
+        }
+
+        if (type === "shake") {
+          x = Math.sin(tempT * 0.1) * 5
+          y = Math.cos(tempT * 0.1) * 5
+        }
+
+        if (type === "rotate") {
+          rotate = Math.sin(tempT * 0.01) * 10
+        }
+
+        if (type === "breath") {
+          scale = 1 + Math.sin(tempT * 0.005) * 0.05
+        }
+
+        ctx.save()
+        ctx.translate(cx + x, cy + y)
+        ctx.rotate(rotate * Math.PI / 180)
+        ctx.scale(scale * scaleBase, scale * scaleBase)
+        ctx.drawImage(img, -img.width / 2, -img.height / 2)
+        ctx.restore()
+
+        gif.addFrame(canvas, { delay: 16 })
+        tempT++
+      }
+
+      for (let i = 0; i < frames; i++) {
+        drawFrame()
+      }
+
+      gif.on("finished", blob => {
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = "avatar.gif"
+        a.click()
+      })
+
+      gif.render()
+    }
+  </script>
+</body>
+</html>
