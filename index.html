@@ -1,208 +1,80 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <title>Q版头像动图生成器</title>
+  <title>黄大厨炒制动图生成器</title>
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont;
+      font-family: Arial, "微软雅黑";
       text-align: center;
-      background: #f5f5f5;
-      padding: 20px;
+      margin-top: 50px;
+      background: #f9f9f9;
     }
-    canvas {
-      background: white;
-      border-radius: 12px;
-      margin: 20px 0;
-    }
-    button, select, input {
-      margin: 8px;
-      padding: 8px 12px;
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 16px;
+      cursor: pointer;
       border-radius: 8px;
       border: none;
-      background: #333;
+      background: #ff7b54;
       color: white;
-      cursor: pointer;
+    }
+    canvas {
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      margin-top: 20px;
+      max-width: 90%;
     }
   </style>
 </head>
-
 <body>
-  <h2>✨ Q版头像动图生成器</h2>
 
-  <input type="file" id="upload" accept="image/*">
+<h2>🍳 黄大厨炒制动图生成器</h2>
+<canvas id="canvas" width="300" height="300"></canvas>
+<br>
+<button onclick="changeSpeed()">速度</button>
+<button onclick="changeSize()">大小</button>
+<button onclick="flipImage()">翻转</button>
+<button onclick="exportGIF()">导出GIF</button>
 
-  <br>
+<script src="https://cdn.jsdelivr.net/npm/gif.js/dist/gif.min.js"></script>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let speed = 200;
+let size = 1;
+let flip = 1;
 
-  <select id="effect">
-    <option value="bounce">开心跳</option>
-    <option value="shake">抖动</option>
-    <option value="rotate">摇头</option>
-    <option value="breath">呼吸感</option>
-  </select>
-
-  <br>
-
-  <canvas id="canvas" width="300" height="300"></canvas>
-
-  <br>
-
-  <button id="export">导出GIF</button>
-
-  <script src="https://cdn.jsdelivr.net/npm/gif.js.optimized/dist/gif.js"></script>
-
-  <script>
-    const canvas = document.getElementById("canvas")
-    const ctx = canvas.getContext("2d")
-    const upload = document.getElementById("upload")
-    const effectSelect = document.getElementById("effect")
-
-    let img = null
-    let t = 0
-
-    upload.onchange = e => {
-      const file = e.target.files[0]
-      const reader = new FileReader()
-      reader.onload = () => {
-        img = new Image()
-        img.src = reader.result
-      }
-      reader.readAsDataURL(file)
-    }
-
-    function draw() {
-      requestAnimationFrame(draw)
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-      if (!img) return
-
-      const cx = canvas.width / 2
-      const cy = canvas.height / 2
-
-      const scaleBase = Math.min(
-        canvas.width / img.width,
-        canvas.height / img.height
-      ) * 0.8
-
-      let x = 0, y = 0, scale = 1, rotate = 0
-
-      const type = effectSelect.value
-
-      if (type === "bounce") {
-        y = Math.abs(Math.sin(t * 0.01)) * -20
-      }
-
-      if (type === "shake") {
-        x = Math.sin(t * 0.1) * 5
-        y = Math.cos(t * 0.1) * 5
-      }
-
-      if (type === "rotate") {
-        rotate = Math.sin(t * 0.01) * 10
-      }
-
-      if (type === "breath") {
-        scale = 1 + Math.sin(t * 0.005) * 0.05
-      }
-
-      ctx.save()
-      ctx.translate(cx + x, cy + y)
-      ctx.rotate(rotate * Math.PI / 180)
-      ctx.scale(scale * scaleBase, scale * scaleBase)
-
-      ctx.drawImage(img, -img.width / 2, -img.height / 2)
-
-      ctx.restore()
-
-      t++
-    }
-
-    draw()
-
-document.getElementById("export").onclick = () => {
-  if (!img) return alert("先上传图片！")
-
-  const gif = new GIF({
-    workers: 2,
-    quality: 10,
-    workerScript: "https://cdn.jsdelivr.net/npm/gif.js.optimized/dist/gif.worker.js"
-  })
-
-  for (let i = 0; i < 40; i++) {
-    drawFrame(i)
-    gif.addFrame(canvas, { delay: 16 })
-  }
-
-  gif.on("finished", blob => {
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = "avatar.gif"
-    a.click()
-  })
-
-  gif.render()
+function draw() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.save();
+  ctx.scale(flip,1);
+  ctx.font = `${30*size}px Arial`;
+  ctx.fillStyle='#ff5722';
+  ctx.textAlign='center';
+  ctx.fillText('正在爆炒',flip*canvas.width/2,canvas.height/2);
+  ctx.fillText('你的头像',flip*canvas.width/2,canvas.height/2+50);
+  ctx.restore();
 }
+draw();
 
-      let frames = 60
-      let tempT = 0
+function changeSpeed(){speed=speed==200?100:200}
+function changeSize(){size=size==1?1.3:1;draw()}
+function flipImage(){flip*=-1;draw()}
 
-      function drawFrame() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
+function exportGIF(){
+  const gif=new GIF({workers:2,quality:10,width:canvas.width,height:canvas.height,workerScript:'https://cdn.jsdelivr.net/npm/gif.js/dist/gif.worker.js'});
+  for(let i=0;i<10;i++){gif.addFrame(canvas,{delay:speed})}
+  gif.on('finished',(blob)=>{
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='黄大厨爆炒.gif';
+    a.click();
+  });
+  gif.render();
+}
+</script>
 
-        const cx = canvas.width / 2
-        const cy = canvas.height / 2
-
-        const scaleBase = Math.min(
-          canvas.width / img.width,
-          canvas.height / img.height
-        ) * 0.8
-
-        let x = 0, y = 0, scale = 1, rotate = 0
-        const type = effectSelect.value
-
-        if (type === "bounce") {
-          y = Math.abs(Math.sin(tempT * 0.01)) * -20
-        }
-
-        if (type === "shake") {
-          x = Math.sin(tempT * 0.1) * 5
-          y = Math.cos(tempT * 0.1) * 5
-        }
-
-        if (type === "rotate") {
-          rotate = Math.sin(tempT * 0.01) * 10
-        }
-
-        if (type === "breath") {
-          scale = 1 + Math.sin(tempT * 0.005) * 0.05
-        }
-
-        ctx.save()
-        ctx.translate(cx + x, cy + y)
-        ctx.rotate(rotate * Math.PI / 180)
-        ctx.scale(scale * scaleBase, scale * scaleBase)
-        ctx.drawImage(img, -img.width / 2, -img.height / 2)
-        ctx.restore()
-
-        gif.addFrame(canvas, { delay: 16 })
-        tempT++
-      }
-
-      for (let i = 0; i < frames; i++) {
-        drawFrame()
-      }
-
-      gif.on("finished", blob => {
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement("a")
-        a.href = url
-        a.download = "avatar.gif"
-        a.click()
-      })
-
-      gif.render()
-    }
-  </script>
 </body>
 </html>
