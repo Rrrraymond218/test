@@ -2,39 +2,41 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <title>黄大厨炒制动图生成器</title>
+  <title>🍳 黄大厨炒制动图生成器</title>
   <style>
     body {
       font-family: Arial, "微软雅黑";
       text-align: center;
-      margin-top: 50px;
-      background: #f9f9f9;
+      margin: 40px;
+      background: #fafafa;
     }
-    button {
-      padding: 10px 20px;
-      margin: 10px;
-      font-size: 16px;
-      cursor: pointer;
+    button, input {
+      padding: 10px 18px;
+      margin: 8px;
+      font-size: 15px;
       border-radius: 8px;
       border: none;
       background: #ff7b54;
       color: white;
+      cursor: pointer;
     }
     canvas {
-      border: 2px solid #ccc;
-      border-radius: 10px;
+      border: 3px solid #ff7b54;
+      border-radius: 12px;
       margin-top: 20px;
       max-width: 90%;
+      background: white;
     }
   </style>
 </head>
 <body>
 
 <h2>🍳 黄大厨炒制动图生成器</h2>
-<canvas id="canvas" width="300" height="300"></canvas>
+<input type="file" id="upload" accept="image/*" onchange="loadImage(event)">
+<canvas id="canvas" width="320" height="320"></canvas>
 <br>
+
 <button onclick="changeSpeed()">速度</button>
-<button onclick="changeSize()">大小</button>
 <button onclick="flipImage()">翻转</button>
 <button onclick="exportGIF()">导出GIF</button>
 
@@ -42,39 +44,58 @@
 <script>
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-let speed = 200;
-let size = 1;
+let img = null;
+let speed = 180;
 let flip = 1;
 
+// 上传图片
+function loadImage(e) {
+  const file = new FileReader();
+  file.onload = function(event){
+    img = new Image();
+    img.onload = draw;
+    img.src = event.target.result;
+  }
+  file.readAsDataURL(e.target.files[0]);
+}
+
+// 绘制画面
 function draw() {
+  if (!img) return;
   ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.save();
   ctx.scale(flip,1);
-  ctx.font = `${30*size}px Arial`;
-  ctx.fillStyle='#ff5722';
-  ctx.textAlign='center';
-  ctx.fillText('正在爆炒',flip*canvas.width/2,canvas.height/2);
-  ctx.fillText('你的头像',flip*canvas.width/2,canvas.height/2+50);
+  ctx.drawImage(img, flip<0?canvas.width:0,0,canvas.width,canvas.height);
   ctx.restore();
 }
-draw();
 
-function changeSpeed(){speed=speed==200?100:200}
-function changeSize(){size=size==1?1.3:1;draw()}
-function flipImage(){flip*=-1;draw()}
+// 功能按钮
+function changeSpeed() { speed = speed == 180 ? 100 : 180; }
+function flipImage() { flip *= -1; draw(); }
 
-function exportGIF(){
-  const gif=new GIF({workers:2,quality:10,width:canvas.width,height:canvas.height,workerScript:'https://cdn.jsdelivr.net/npm/gif.js/dist/gif.worker.js'});
-  for(let i=0;i<10;i++){gif.addFrame(canvas,{delay:speed})}
-  gif.on('finished',(blob)=>{
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);
-    a.download='黄大厨爆炒.gif';
+// 导出GIF
+function exportGIF() {
+  const gif = new GIF({
+    workers: 2,
+    quality: 10,
+    width: canvas.width,
+    height: canvas.height,
+    workerScript: 'https://cdn.jsdelivr.net/npm/gif.js/dist/gif.worker.js'
+  });
+
+  for(let i=0;i<12;i++){
+    gif.addFrame(canvas, {delay:speed});
+  }
+
+  gif.on('finished', (blob) => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '黄大厨爆炒.gif';
     a.click();
   });
+
   gif.render();
 }
 </script>
-
 </body>
 </html>
